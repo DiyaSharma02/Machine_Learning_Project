@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Air Quality Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial;
+            background: #0f172a;
+            color: white;
+        }
+
+        .navbar {
+            background: #020617;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .navbar h2 {
+            color: #38bdf8;
+            margin: 0;
+        }
+
+        .container {
+            width: 90%;
+            margin: auto;
+            text-align: center;
+        }
+
+        select, button {
+            padding: 10px;
+            margin: 10px;
+            border-radius: 5px;
+            border: none;
+        }
+
+        button {
+            background: #38bdf8;
+            cursor: pointer;
+        }
+
+        .card {
+            background: #1e293b;
+            padding: 20px;
+            margin: 20px auto;
+            border-radius: 15px;
+            width: 60%;
+        }
+
+        /* FIXED GRID */
+        .chart-grid {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        .chart-container {
+            width: 45%;
+            background: white;
+            margin: 15px;
+            padding: 20px;
+            border-radius: 10px;
+            color: black;
+            text-align: center;
+        }
+
+        /* FIXED CANVAS */
+        canvas {
+            display: block;
+            margin: 0 auto;
+            height: 300px !important;
+        }
+
+        .analysis {
+            display: none;
+            background: #020617;
+            color: #38bdf8;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+            line-height: 1.6;
+        }
+
+        .footer {
+            background: #020617;
+            padding: 10px;
+            margin-top: 30px;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="navbar">
+    <h2>🌍 AirSense: Air Quality Insights System</h2>
+</div>
+
+<div class="container">
+
+<form action="/filter" method="post">
+    <select name="city">
+        {% for city in cities %}
+        <option value="{{city}}">{{city}}</option>
+        {% endfor %}
+    </select>
+    <button type="submit">Update</button>
+</form>
+
+{% if latest_aqi %}
+
+<!-- KPI -->
+<div class="card">
+    <h2>Current AQI: {{ latest_aqi }}</h2>
+    <h2>Predicted AQI: {{ pred }}</h2>
+    <h3 style="color: {{color}}">{{ advice }}</h3>
+</div>
+
+<!-- ANALYSIS -->
+<div class="card">
+    <h3>📊 AQI Analysis</h3>
+    <button onclick="toggle('dynamicAnalysis')">📖 Read Analysis</button>
+
+    <p id="dynamicAnalysis" class="analysis">
+        {{ analysis | safe }}
+    </p>
+</div>
+
+<!-- CHARTS -->
+<div class="chart-grid">
+
+    <!-- AQI -->
+    <div class="chart-container">
+        <h3>📈 AQI Trend</h3>
+        <button onclick="toggle('aqiInfo')">📖 Read Analysis</button>
+
+        <p id="aqiInfo" class="analysis">
+            This chart shows AQI variation over time.
+        </p>
+
+        <canvas id="aqiChart"></canvas>
+    </div>
+
+    <!-- BAR -->
+    <div class="chart-container">
+        <h3>📊 Pollutant Levels</h3>
+        <button onclick="toggle('barInfo')">📖 Read Analysis</button>
+
+        <p id="barInfo" class="analysis">
+            PM2.5 and PM10 comparison.
+        </p>
+
+        <canvas id="barChart"></canvas>
+    </div>
+
+    <!-- 🔥 FIXED PIE CHART -->
+    <div class="chart-container" style="width: 50%; display:flex; justify-content:center;">
+        
+        <div style="width:300px;">
+            <h3>🥧 Pollution Distribution</h3>
+            <button onclick="toggle('pieInfo')">📖 Read Analysis</button>
+
+            <p id="pieInfo" class="analysis">
+                Shows contribution of pollutants.
+            </p>
+
+            <canvas id="pieChart"></canvas>
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+function toggle(id) {
+    var x = document.getElementById(id);
+    x.style.display = (x.style.display === "block") ? "none" : "block";
+}
+
+new Chart(document.getElementById("aqiChart"), {
+    type: 'line',
+    data: {
+        labels: {{ dates|safe }},
+        datasets: [{
+            label: 'AQI',
+            data: {{ aqi|safe }},
+            borderColor: 'blue'
+        }]
+    }
+});
+
+new Chart(document.getElementById("barChart"), {
+    type: 'bar',
+    data: {
+        labels: {{ dates|safe }},
+        datasets: [
+            { label:'PM2.5', data: {{ pm25|safe }}, backgroundColor:'red' },
+            { label:'PM10', data: {{ pm10|safe }}, backgroundColor:'orange' }
+        ]
+    }
+});
+
+new Chart(document.getElementById("pieChart"), {
+    type: 'pie',
+    data: {
+        labels:['PM2.5','PM10'],
+        datasets:[{
+            data:[{{ pm25_val }}, {{ pm10_val }}],
+            backgroundColor:['red','orange']
+        }]
+    }
+});
+</script>
+
+{% endif %}
+
+</div>
+
+<div class="footer">
+    <p>🚀 AI Air Quality System</p>
+</div>
+
+</body>
+</html>
